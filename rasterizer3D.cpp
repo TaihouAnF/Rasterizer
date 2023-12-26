@@ -1,7 +1,46 @@
 // rasterizer3D.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
+// #include <iostream>
 
-#include <iostream>
+
+/**
+ * This code is following the tutorial created by @javidx9, 
+ * Follow the link here: https://youtu.be/ih20l3pJoeU?si=3iTC-grtO-zyhjuu 
+ */
+
+#include "olcConsoleGameEngine.h"
+
+/**
+ * @brief A new class inherit from olcConsoleGameEngine
+ */
+class newEngine : public olcConsoleGameEngine {
+public:
+    newEngine() {
+        m_sAppName = L"3D Demo";
+    }
+
+    /**
+     * @brief A function to handle creating object by the user.
+     * @return true if successfully created, otherwise false.
+     */
+    bool OnUserCreate() override {
+
+        // Return true to indicate it works without error
+        return true;
+    }
+
+    /**
+     * @brief 
+     * @param fDeltaTime The time difference between two frame updates
+     * @return true if successfully called, otherwise false.
+     */
+    bool OnUserUpdate(float fDeltaTime) override {
+
+
+        // Return true to indicate it works without error
+        return true;
+    }
+};
+
 
 int main()
 {

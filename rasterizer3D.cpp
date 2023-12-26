@@ -14,37 +14,37 @@ constexpr float PI = 3.14159f;
 /**
  * @brief A 3D vector in space, x y and z represents coordinate in 3D space
  */
-struct vector3d {
+struct Vector3d {
     float x, y, z;
 };
 
 /**
- * @brief A triangle object with three points. 
+ * @brief A Triangle object with three points. 
  */
-struct triangle {
-    vector3d pts[3];
+struct Triangle {
+    Vector3d pts[3];
 };
 
 /**
- * @brief A mesh of multiple triangles, use this to represent arbitrary type of objects
+ * @brief A Mesh of multiple Triangles, use this to represent arbitrary type of objects
  */
-struct mesh {
-    std::vector<triangle> tris;
+struct Mesh {
+    std::vector<Triangle> tris;
 };
 
 /**
  * @brief A 4 by 4 matrix, initialize with 0
  */
-struct mat4x4 {
+struct Mat4x4 {
     float m[4][4] = { 0 };
 };
 
 /**
  * @brief A new class inherit from olcConsoleGameEngine
  */
-class newEngine : public olcConsoleGameEngine {
+class NewEngine : public olcConsoleGameEngine {
 public:
-    newEngine() {
+    NewEngine() {
         m_sAppName = L"3D Demo";
     }
 
@@ -55,7 +55,7 @@ public:
     bool OnUserCreate() override {
         
         // Create a Cube with 6 faces. Here we use struct initialization here
-        mesh_cube_.tris = {
+        Mesh_cube_.tris = {
             // SOUTH
             { 0.0f, 0.0f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 0.0f },
             { 0.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f },
@@ -102,17 +102,38 @@ public:
 
     /**
      * @brief 
-     * @param fDeltaTime The time difference between two frame updates
+     * @param delta_time The time difference between two frame updates
      * @return true if successfully called, otherwise false.
      */
-    bool OnUserUpdate(float fDeltaTime) override {
+    bool OnUserUpdate(float delta_time) override {
 
         // Fill the background With color, only works on first project
         Fill(0, 0, ScreenWidth(), ScreenHeight(), PIXEL_SOLID, FG_BLUE);
 
-        // Draw triangles/mesh, so far we only have a vector array of triangle
+        // Setting Up Rotation Matrices
+        Mat4x4 mat_rot_z, mat_rot_x;
+        theta_ += 1.0f * delta_time;
+
+        // Rotation Z
+        mat_rot_z.m[0][0] = cosf(theta_);
+        mat_rot_z.m[0][1] = sinf(theta_);
+        mat_rot_z.m[1][0] = -sinf(theta_);
+        mat_rot_z.m[1][1] = cosf(theta_);
+        mat_rot_z.m[2][2] = 1;
+        mat_rot_z.m[3][3] = 1;
+
+        // Rotation X
+        mat_rot_x.m[0][0] = 1;
+        mat_rot_x.m[1][1] = cosf(theta_ * 0.5f);
+        mat_rot_x.m[1][2] = sinf(theta_ * 0.5f);
+        mat_rot_x.m[2][1] = -sinf(theta_ * 0.5f);
+        mat_rot_x.m[2][2] = cosf(theta_ * 0.5f);
+        mat_rot_x.m[3][3] = 1;
+
+
+        // Draw Triangles/Mesh, so far we only have a vector array of Triangle
         // thus, we use for loop
-        for (auto& tri : mesh_cube_.tris) {
+        for (auto& tri : Mesh_cube_.tris) {
 
         }
 
@@ -122,10 +143,10 @@ public:
     }
 
 private:
-    mesh mesh_cube_;
-    mat4x4 mat_projection_;
+    Mesh Mesh_cube_;
+    Mat4x4 mat_projection_;
 
-    float delta_time_;
+    float theta_;
 };
 
 

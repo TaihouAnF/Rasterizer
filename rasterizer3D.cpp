@@ -9,6 +9,8 @@
 
 #include "olcConsoleGameEngine.h"
 
+constexpr float PI = 3.14159f;
+
 /**
  * @brief A 3D vector in space, x y and z represents coordinate in 3D space
  */
@@ -31,6 +33,13 @@ struct mesh {
 };
 
 /**
+ * @brief A 4 by 4 matrix, initialize with 0
+ */
+struct mat4x4 {
+    float m[4][4] = { 0 };
+};
+
+/**
  * @brief A new class inherit from olcConsoleGameEngine
  */
 class newEngine : public olcConsoleGameEngine {
@@ -44,6 +53,48 @@ public:
      * @return true if successfully created, otherwise false.
      */
     bool OnUserCreate() override {
+        
+        // Create a Cube with 6 faces. Here we use struct initialization here
+        mesh_cube_.tris = {
+            // SOUTH
+            { 0.0f, 0.0f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 0.0f },
+            { 0.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f },
+
+            // EAST                                                      
+            { 1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 1.0f, 1.0f },
+            { 1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f },
+
+            // NORTH                                                     
+            { 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f },
+            { 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f },
+
+            // WEST                                                      
+            { 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f },
+            { 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f },
+
+            // TOP                                                       
+            { 0.0f, 1.0f, 0.0f,    0.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f },
+            { 0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 0.0f },
+
+            // BOTTOM                                                    
+            { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f },
+            { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f },
+        };
+        
+        // Projection Matrix
+        float near_plane = 0.1f;
+        float far_plane = 1000.0f;
+        float fov = 90.0f;  // FOV as usual
+        float aspect_ratio = (float)ScreenHeight() / (float)ScreenWidth();
+        float fov_radius = 1.0f / tanf(fov * 0.5f / 180.0f * PI);
+
+        // Setting up the projection matrix
+        mat_projection_.m[0][0] = aspect_ratio * fov_radius;
+        mat_projection_.m[1][1] = fov_radius;
+        mat_projection_.m[2][2] = far_plane / (fov_radius - near_plane);
+        mat_projection_.m[3][2] = (-far_plane * near_plane) / (far_plane - near_plane);
+        mat_projection_.m[2][3] = 1.0f;
+        mat_projection_.m[3][3] = 0.0f;
 
         // Return true to indicate it works without error
         return true;
@@ -56,10 +107,25 @@ public:
      */
     bool OnUserUpdate(float fDeltaTime) override {
 
+        // Fill the background With color, only works on first project
+        Fill(0, 0, ScreenWidth(), ScreenHeight(), PIXEL_SOLID, FG_BLUE);
+
+        // Draw triangles/mesh, so far we only have a vector array of triangle
+        // thus, we use for loop
+        for (auto& tri : mesh_cube_.tris) {
+
+        }
+
 
         // Return true to indicate it works without error
         return true;
     }
+
+private:
+    mesh mesh_cube_;
+    mat4x4 mat_projection_;
+
+    float delta_time_;
 };
 
 

@@ -10,6 +10,27 @@
 #include "olcConsoleGameEngine.h"
 
 /**
+ * @brief A 3D vector in space, x y and z represents coordinate in 3D space
+ */
+struct vector3d {
+    float x, y, z;
+};
+
+/**
+ * @brief A triangle object with three points. 
+ */
+struct triangle {
+    vector3d pts[3];
+};
+
+/**
+ * @brief A mesh of multiple triangles, use this to represent arbitrary type of objects
+ */
+struct mesh {
+    std::vector<triangle> tris;
+};
+
+/**
  * @brief A new class inherit from olcConsoleGameEngine
  */
 class newEngine : public olcConsoleGameEngine {

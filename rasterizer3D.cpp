@@ -87,6 +87,7 @@ public:
         float fov = 90.0f;  // FOV as usual
         float aspect_ratio = (float)ScreenHeight() / (float)ScreenWidth();
         float fov_radius = 1.0f / tanf(fov * 0.5f / 180.0f * PI);
+        cam_ = { 0.0f, 0.0f, 0.0f };    // The cam are set to origin for simplicity
 
         // Setting up the projection matrix
         mat_projection_.m[0][0] = aspect_ratio * fov_radius;
@@ -161,8 +162,12 @@ public:
             CrossProduct(line_1, line_2, normal);
             Normalize(normal);
             
-            // First Try: Debugging and making triangles be visible only at the front. we only project those on the front.
-            if (normal.z < 0) {
+            /**
+             * Now we actually have a camera, we want to make sure the normal is facing the camera direction, 
+             * so we introduce a dot product here. 
+             * And we can take any points on the triangle as they are all on the same plane.
+             */
+            if (DotProduct(normal, VectorSubtraction(triangle_trans.pts[0], cam_)) < 0) {
                 // Projection from 3D ---> 2D
                 for (int i = 0; i < 3; ++i) {
                     MultiplyMatrixVector(triangle_trans.pts[i], triangle_proj.pts[i], mat_projection_);
@@ -191,7 +196,7 @@ public:
 private:
     Mesh mesh_cube_;        // A Mesh used in default
     Mat4x4 mat_projection_; // A project matrix
-
+    Vector3d cam_;          // A temporary camera currently, we set it to the origin first
     float theta_;           // Rotation angle
 
 
@@ -230,6 +235,20 @@ private:
     }
 
     /**
+     * @brief Overloaded version of previous addition.
+     * @param input_a One parameter vector
+     * @param input_b The other parameter vector
+     * @return The result vector
+     */
+    Vector3d VectorAddition(Vector3d& input_a, Vector3d& input_b) {
+        Vector3d res = { 0.0f, 0.0f, 0.0f };
+        res.x = input_a.x + input_b.x;
+        res.y = input_a.y + input_b.y;
+        res.z = input_a.z + input_b.z;
+        return res;
+    }
+
+    /**
      * @brief Similar to Addition.
      * @param input_a One parameter vector
      * @param input_b The other parameter vector
@@ -242,12 +261,26 @@ private:
     }
 
     /**
+     * @brief This method is an overloaded version of previous subtraction
+     * @param input_a One parameter vector
+     * @param input_b The other parameter vector
+     * @return The result vector
+    */
+    Vector3d VectorSubtraction(Vector3d& input_a, Vector3d& input_b) {
+        Vector3d res{};
+        res.x = input_a.x - input_b.x;
+        res.y = input_a.y - input_b.y;
+        res.z = input_a.z - input_b.z;
+        return res;
+    }
+
+    /**
      * @brief Compute the dot product between two vectors in 3d.
      * @param input_a One parameter vector
      * @param input_b The other parameter vector
      * @return the final product of the dot product operation
      */
-    float DotProduct(Vector3d& input_a, Vector3d& input_b) {
+    float DotProduct(Vector3d input_a, Vector3d input_b) {
         return input_a.x * input_b.x +
             input_a.y * input_b.y +
             input_a.z * input_b.z;

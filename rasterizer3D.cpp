@@ -55,7 +55,7 @@ public:
     bool OnUserCreate() override {
         
         // Create a Cube with 6 faces. Here we use struct initialization here
-        Mesh_cube_.tris = {
+        mesh_cube_.tris = {
             // SOUTH
             { 0.0f, 0.0f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 0.0f },
             { 0.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f },
@@ -108,7 +108,7 @@ public:
     bool OnUserUpdate(float delta_time) override {
 
         // Fill the background With color, only works on first project
-        Fill(0, 0, ScreenWidth(), ScreenHeight(), PIXEL_SOLID, FG_BLUE);
+        Fill(0, 0, ScreenWidth(), ScreenHeight(), PIXEL_SOLID, FG_BLACK);
 
         // Setting Up Rotation Matrices
         Mat4x4 mat_rot_z, mat_rot_x;
@@ -133,7 +133,45 @@ public:
 
         // Draw Triangles/Mesh, so far we only have a vector array of Triangle
         // thus, we use for loop
-        for (auto& tri : Mesh_cube_.tris) {
+        for (auto& tri : mesh_cube_.tris) {
+            Triangle triangle_proj{}, triangle_trans{}, triangle_rotate_z{}, triangle_rotate_zx{};
+            
+            // Rotate on Z axis
+            for (int i = 0; i < 3; ++i) {
+                MultiplyMatrixVector(tri.pts[i], triangle_rotate_z.pts[i], mat_rot_z);
+            }
+
+            // Rotate on X axis
+            for (int i = 0; i < 3; ++i) {
+                MultiplyMatrixVector(triangle_rotate_z.pts[i], triangle_rotate_zx.pts[i], mat_rot_x);
+            }
+
+            // Translate, struct can have curly brace initialization here since C++11, and 
+            // we only put an offset of 3.0f further.
+            Vector3d translation = { 0.0f, 0.0f, 3.0f };
+            // triangle_trans = triangle_rotate_zx; this line is redundant
+            for (int i = 0; i < 3; ++i) {
+                VectorAddition(triangle_rotate_zx.pts[i], translation, triangle_trans.pts[i]);
+            }
+
+            // Projection from 3D ---> 2D
+            for (int i = 0; i < 3; ++i) {
+                MultiplyMatrixVector(triangle_trans.pts[i], triangle_proj.pts[i], mat_projection_);
+            }
+
+            // Scaling the Triangle
+            for (int i = 0; i < 3; ++i) {
+                triangle_proj.pts[i].x += 1.0f;
+                triangle_proj.pts[i].y += 1.0f;
+                triangle_proj.pts[i].x *= 0.5f * (float)ScreenWidth();
+                triangle_proj.pts[i].y *= 0.5f * (float)ScreenHeight();
+            }
+
+            // Rasterize triangle
+            DrawTriangle(triangle_proj.pts[0].x, triangle_proj.pts[0].y,
+                triangle_proj.pts[1].x, triangle_proj.pts[1].y,
+                triangle_proj.pts[2].x, triangle_proj.pts[2].y,
+                PIXEL_SOLID, FG_WHITE);
 
         }
 
@@ -143,15 +181,51 @@ public:
     }
 
 private:
-    Mesh Mesh_cube_;
-    Mat4x4 mat_projection_;
+    Mesh mesh_cube_;        // A Mesh used in default
+    Mat4x4 mat_projection_; // A project matrix
 
-    float theta_;
+    float theta_;           // Rotation angle
+
+    /**
+     * @brief This method helps to do the matrix calculation with matrix and vector,
+     * it uses pass-in by reference to save some space.
+     * @param i The input vector
+     * @param out The result vector
+     * @param matrix The matrix
+     */
+    void MultiplyMatrixVector(Vector3d& i, Vector3d& out, Mat4x4& matrix) {
+        out.x = i.x * matrix.m[0][0] + i.y * matrix.m[1][0] + i.z * matrix.m[2][0] + matrix.m[3][0];
+        out.y = i.x * matrix.m[0][1] + i.y * matrix.m[1][1] + i.z * matrix.m[2][1] + matrix.m[3][1];
+        out.z = i.x * matrix.m[0][2] + i.y * matrix.m[1][2] + i.z * matrix.m[2][2] + matrix.m[3][2];
+        float w = i.x * matrix.m[0][3] + i.y * matrix.m[1][3] + i.z * matrix.m[2][3] + matrix.m[3][3];
+
+        if (w != 0.0f) {
+            out.x /= w;
+            out.y /= w;
+            out.z /= w;
+        }
+    }
+
+    /**
+     * @brief This method performs vector addition, both vector should be the same size.
+     * @param input_a One parameter vector
+     * @param input_b The other parameter vector
+     * @param out The result vector 
+     */
+    void VectorAddition(Vector3d& input_a, Vector3d& input_b, Vector3d& out) {
+        out.x = input_a.x + input_b.x;
+        out.y = input_a.y + input_b.y;
+        out.z = input_a.z + input_b.z;
+    }
 };
 
 
 int main()
 {
+    NewEngine demo;
+    if (demo.ConstructConsole(256, 240, 4, 4)) {
+        demo.Start();
+    }
     return 0;
 }
 

@@ -7,6 +7,9 @@
  * Follow the link here: https://youtu.be/ih20l3pJoeU?si=3iTC-grtO-zyhjuu 
  */
 
+#include <fstream>
+#include <strstream>
+#include <algorithm>
 #include "olcConsoleGameEngine.h"
 
 constexpr float PI = 3.14159f;
@@ -33,6 +36,56 @@ struct Triangle {
  */
 struct Mesh {
     std::vector<Triangle> tris;
+
+    /**
+     * @brief Load obj file using the string "filename".
+     * @param filename The string representing the obj file
+     * @return true if successfully loaded, otherwise false
+    */
+    bool LoadFromObjFile(std::string filename) {
+        std::ifstream f(filename);
+
+        // If the file cannot be opened
+        if (!f.is_open()) {
+            std::cerr << "The file cannot be opened.\n";
+            return false;
+        }
+
+        // A cache for vertices
+        std::vector<Vector3d> vertices;
+        while (!f.eof()) {
+            
+            // String buffer
+            char line[128];
+            
+            // Read the line
+            f.getline(line, 128);
+
+            // String stream buffer
+            std::strstream s;
+
+            // Input the line
+            s << line;
+
+            // Junk, as we don't need the first character to be stored
+            char junk;
+
+            // If currently the line represent a vertex
+            if (line[0] == 'v') {
+                Vector3d vec{};
+                s >> junk >> vec.x >> vec.y >> vec.z;
+                vertices.push_back(vec);
+            }
+            // If currently the line represent a triangle
+            if (line[0] == 'f') {
+                int f[3]{};
+                s >> junk >> f[0] >> f[1] >> f[2];
+                tris.push_back({ vertices[f[0] - 1], vertices[f[1] - 1], vertices[f[2] - 1] });
+            }
+        }
+
+        return true;
+    }
 };
 
 /**
@@ -58,31 +111,34 @@ public:
     bool OnUserCreate() override {
         
         // Create a Cube with 6 faces. Here we use struct initialization here.
-        mesh_cube_.tris = {
-            // SOUTH
-            { 0.0f, 0.0f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 0.0f },
-            { 0.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f },
+        //mesh_cube_.tris = {
+        //    // SOUTH
+        //    { 0.0f, 0.0f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 0.0f },
+        //    { 0.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f },
 
-            // EAST                                                      
-            { 1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 1.0f, 1.0f },
-            { 1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f },
+        //    // EAST                                                      
+        //    { 1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 1.0f, 1.0f },
+        //    { 1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f },
 
-            // NORTH                                                     
-            { 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f },
-            { 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f },
+        //    // NORTH                                                     
+        //    { 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f },
+        //    { 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f },
 
-            // WEST                                                      
-            { 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f },
-            { 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f },
+        //    // WEST                                                      
+        //    { 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f },
+        //    { 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f },
 
-            // TOP                                                       
-            { 0.0f, 1.0f, 0.0f,    0.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f },
-            { 0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 0.0f },
+        //    // TOP                                                       
+        //    { 0.0f, 1.0f, 0.0f,    0.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f },
+        //    { 0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 0.0f },
 
-            // BOTTOM                                                    
-            { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f },
-            { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f },
-        };
+        //    // BOTTOM                                                    
+        //    { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f },
+        //    { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f },
+        //};
+
+        // Using load file
+        mesh_cube_.LoadFromObjFile("VideoShip.obj");
         
         // Projection Matrix
         float near_plane = 0.1f;
@@ -105,7 +161,7 @@ public:
     }
 
     /**
-     * @brief 
+     * @brief Update method, being called every frame
      * @param delta_time The time difference between two frame updates.
      * @return true if successfully called, otherwise false.
      */
@@ -134,6 +190,8 @@ public:
         mat_rot_x.m[2][2] = cosf(theta_ * 0.5f);
         mat_rot_x.m[3][3] = 1;
 
+        // In order to use painter algorithm, we need a new array to cache the triangles
+        std::vector<Triangle> sort_tri_raster;
 
         // Draw Triangles/Mesh, so far we only have a vector array of Triangles.
         // thus, we use for loop
@@ -151,8 +209,9 @@ public:
             }
 
             // Translate, struct can have curly brace initialization here since C++11, and 
-            // we only put an offset of 3.0f further.
-            Vector3d translation = { 0.0f, 0.0f, 3.0f };
+            // we only put an offset of 3.0f further. Now, as the ship is bigger, we need to put it further away 
+            // to avoid stuttering.
+            Vector3d translation = { 0.0f, 0.0f, 8.0f };
             // triangle_trans = triangle_rotate_zx; this line is redundant
             for (int i = 0; i < 3; ++i) {
                 VectorAddition(triangle_rotate_zx.pts[i], translation, triangle_trans.pts[i]);
@@ -196,20 +255,30 @@ public:
                     triangle_proj.pts[i].y *= 0.5f * (float)ScreenHeight();
                 }
 
-                // Rasterize triangle, Now the olc console engine has the function call fillTriangle
-                FillTriangle(triangle_proj.pts[0].x, triangle_proj.pts[0].y,
-                    triangle_proj.pts[1].x, triangle_proj.pts[1].y,
-                    triangle_proj.pts[2].x, triangle_proj.pts[2].y,
-                    triangle_proj.sym, triangle_proj.col);
-                
-                
-                /*
-                DrawTriangle(triangle_proj.pts[0].x, triangle_proj.pts[0].y,
-                    triangle_proj.pts[1].x, triangle_proj.pts[1].y,
-                    triangle_proj.pts[2].x, triangle_proj.pts[2].y,
-                    PIXEL_SOLID, FG_WHITE);
-                 */
+                // Push them into the triangle cache
+                sort_tri_raster.push_back(triangle_proj);
             }
+        }
+
+        // sort them using painter algo
+        std::sort(sort_tri_raster.begin(), sort_tri_raster.end(), [](Triangle& t_1, Triangle& t_2) {
+            float z1 = (t_1.pts[0].z + t_1.pts[1].z + t_1.pts[2].z) / 3.0f;
+            float z2 = (t_2.pts[0].z + t_2.pts[1].z + t_2.pts[2].z) / 3.0f;
+            return z1 > z2;
+        });
+
+        for (auto& tri : sort_tri_raster) {
+            // Rasterize triangle, Now the olc console engine has the function call fillTriangle
+            FillTriangle(tri.pts[0].x, tri.pts[0].y,
+                tri.pts[1].x, tri.pts[1].y,
+                tri.pts[2].x, tri.pts[2].y,
+                tri.sym, tri.col);
+
+            // For Debug purpose
+            DrawTriangle(tri.pts[0].x, tri.pts[0].y,
+                tri.pts[1].x, tri.pts[1].y,
+                tri.pts[2].x, tri.pts[2].y,
+                PIXEL_SOLID, FG_BLACK);
         }
 
         // Return true to indicate it works without error.

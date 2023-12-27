@@ -12,28 +12,28 @@
 constexpr float PI = 3.14159f;
 
 /**
- * @brief A 3D vector in space, x y and z represents coordinate in 3D space
+ * @brief A 3D vector in space, x y and z represents coordinate in 3D space.
  */
 struct Vector3d {
     float x, y, z;
 };
 
 /**
- * @brief A Triangle object with three points. 
+ * @brief A Triangle object with three Vector3d points. 
  */
 struct Triangle {
     Vector3d pts[3];
 };
 
 /**
- * @brief A Mesh of multiple Triangles, use this to represent arbitrary type of objects
+ * @brief A Mesh of multiple Triangles, use this to represent arbitrary type of objects.
  */
 struct Mesh {
     std::vector<Triangle> tris;
 };
 
 /**
- * @brief A 4 by 4 matrix, initialize with 0
+ * @brief A 4 by 4 matrix, initialize with 0.0f.
  */
 struct Mat4x4 {
     float m[4][4] = { 0 };
@@ -54,7 +54,7 @@ public:
      */
     bool OnUserCreate() override {
         
-        // Create a Cube with 6 faces. Here we use struct initialization here
+        // Create a Cube with 6 faces. Here we use struct initialization here.
         mesh_cube_.tris = {
             // SOUTH
             { 0.0f, 0.0f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 0.0f },
@@ -96,13 +96,13 @@ public:
         mat_projection_.m[2][3] = 1.0f;
         mat_projection_.m[3][3] = 0.0f;
 
-        // Return true to indicate it works without error
+        // Return true to indicate it works without error.
         return true;
     }
 
     /**
      * @brief 
-     * @param delta_time The time difference between two frame updates
+     * @param delta_time The time difference between two frame updates.
      * @return true if successfully called, otherwise false.
      */
     bool OnUserUpdate(float delta_time) override {
@@ -131,7 +131,7 @@ public:
         mat_rot_x.m[3][3] = 1;
 
 
-        // Draw Triangles/Mesh, so far we only have a vector array of Triangle
+        // Draw Triangles/Mesh, so far we only have a vector array of Triangles.
         // thus, we use for loop
         for (auto& tri : mesh_cube_.tris) {
             Triangle triangle_proj{}, triangle_trans{}, triangle_rotate_z{}, triangle_rotate_zx{};
@@ -154,29 +154,37 @@ public:
                 VectorAddition(triangle_rotate_zx.pts[i], translation, triangle_trans.pts[i]);
             }
 
-            // Projection from 3D ---> 2D
-            for (int i = 0; i < 3; ++i) {
-                MultiplyMatrixVector(triangle_trans.pts[i], triangle_proj.pts[i], mat_projection_);
+            // Calculate the normal first before the projection
+            Vector3d normal{}, line_1{}, line_2{};
+            VectorSubtraction(triangle_trans.pts[1], triangle_trans.pts[0], line_1);
+            VectorSubtraction(triangle_trans.pts[2], triangle_trans.pts[0], line_2);
+            CrossProduct(line_1, line_2, normal);
+            Normalize(normal);
+            
+            // First Try: Debugging and making triangles be visible only at the front. we only project those on the front.
+            if (normal.z < 0) {
+                // Projection from 3D ---> 2D
+                for (int i = 0; i < 3; ++i) {
+                    MultiplyMatrixVector(triangle_trans.pts[i], triangle_proj.pts[i], mat_projection_);
+                }
+
+                // Scaling the Triangle
+                for (int i = 0; i < 3; ++i) {
+                    triangle_proj.pts[i].x += 1.0f;
+                    triangle_proj.pts[i].y += 1.0f;
+                    triangle_proj.pts[i].x *= 0.5f * (float)ScreenWidth();
+                    triangle_proj.pts[i].y *= 0.5f * (float)ScreenHeight();
+                }
+
+                // Rasterize triangle
+                DrawTriangle(triangle_proj.pts[0].x, triangle_proj.pts[0].y,
+                    triangle_proj.pts[1].x, triangle_proj.pts[1].y,
+                    triangle_proj.pts[2].x, triangle_proj.pts[2].y,
+                    PIXEL_SOLID, FG_WHITE);
             }
-
-            // Scaling the Triangle
-            for (int i = 0; i < 3; ++i) {
-                triangle_proj.pts[i].x += 1.0f;
-                triangle_proj.pts[i].y += 1.0f;
-                triangle_proj.pts[i].x *= 0.5f * (float)ScreenWidth();
-                triangle_proj.pts[i].y *= 0.5f * (float)ScreenHeight();
-            }
-
-            // Rasterize triangle
-            DrawTriangle(triangle_proj.pts[0].x, triangle_proj.pts[0].y,
-                triangle_proj.pts[1].x, triangle_proj.pts[1].y,
-                triangle_proj.pts[2].x, triangle_proj.pts[2].y,
-                PIXEL_SOLID, FG_WHITE);
-
         }
 
-
-        // Return true to indicate it works without error
+        // Return true to indicate it works without error.
         return true;
     }
 
@@ -186,12 +194,15 @@ private:
 
     float theta_;           // Rotation angle
 
+
+    // ===================== Things are getting messy, maybe I should make this into another file ================ //
+
     /**
      * @brief This method helps to do the matrix calculation with matrix and vector,
      * it uses pass-in by reference to save some space.
-     * @param i The input vector
-     * @param out The result vector
-     * @param matrix The matrix
+     * @param i The input vector.
+     * @param out The result vector.
+     * @param matrix The matrix.
      */
     void MultiplyMatrixVector(Vector3d& i, Vector3d& out, Mat4x4& matrix) {
         out.x = i.x * matrix.m[0][0] + i.y * matrix.m[1][0] + i.z * matrix.m[2][0] + matrix.m[3][0];
@@ -217,9 +228,59 @@ private:
         out.y = input_a.y + input_b.y;
         out.z = input_a.z + input_b.z;
     }
+
+    /**
+     * @brief Similar to Addition.
+     * @param input_a One parameter vector
+     * @param input_b The other parameter vector
+     * @param out The result vector
+     */
+    void VectorSubtraction(Vector3d& input_a, Vector3d& input_b, Vector3d& out) {
+        out.x = input_a.x - input_b.x;
+        out.y = input_a.y - input_b.y;
+        out.z = input_a.z - input_b.z;
+    }
+
+    /**
+     * @brief Compute the dot product between two vectors in 3d.
+     * @param input_a One parameter vector
+     * @param input_b The other parameter vector
+     * @return the final product of the dot product operation
+     */
+    float DotProduct(Vector3d& input_a, Vector3d& input_b) {
+        return input_a.x * input_b.x +
+            input_a.y * input_b.y +
+            input_a.z * input_b.z;
+    }
+
+    /**
+     * @brief This method performs a cross product of input_a and input_b in 3d.
+     * @param input_a One parameter vector
+     * @param input_b The other parameter vector
+     * @param out The result vector
+     */
+    void CrossProduct(Vector3d& input_a, Vector3d& input_b, Vector3d& out) {
+        out.x = input_a.y * input_b.z - input_a.z * input_b.y;
+        out.y = input_a.z * input_b.x - input_a.x * input_b.z;
+        out.z = input_a.x * input_b.y - input_a.y * input_b.x;
+    }
+
+    /**
+     * @brief Normalize the vector.
+     * @param vec The Vector3d we need to normalize.
+    */
+    void Normalize(Vector3d& vec) {
+        float l = std::sqrtf(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+        vec.x /= l;
+        vec.y /= l;
+        vec.z /= l;
+    }
 };
 
-
+/**
+ * @brief The Main function
+ * @return 0 if successfully run, else 1.
+*/
 int main()
 {
     NewEngine demo;

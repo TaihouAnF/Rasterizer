@@ -181,8 +181,8 @@ public:
                     triangle_proj.pts[i].y *= 0.5f * (float)ScreenHeight();
                 }
 
-                // Rasterize triangle
-                DrawTriangle(triangle_proj.pts[0].x, triangle_proj.pts[0].y,
+                // Rasterize triangle, Now the olc console engine has the function call fillTriangle
+                FillTriangle(triangle_proj.pts[0].x, triangle_proj.pts[0].y,
                     triangle_proj.pts[1].x, triangle_proj.pts[1].y,
                     triangle_proj.pts[2].x, triangle_proj.pts[2].y,
                     PIXEL_SOLID, FG_WHITE);

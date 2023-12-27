@@ -22,7 +22,10 @@ struct Vector3d {
  * @brief A Triangle object with three Vector3d points. 
  */
 struct Triangle {
-    Vector3d pts[3];
+    Vector3d pts[3]; // Three vertices
+
+    wchar_t sym;     // Symbol to the color
+    short col;       // Color value? 
 };
 
 /**
@@ -168,10 +171,22 @@ public:
              * And we can take any points on the triangle as they are all on the same plane.
              */
             if (DotProduct(normal, VectorSubtraction(triangle_trans.pts[0], cam_)) < 0) {
+
+                // Illumination before projection, temporarily
+                Vector3d light_dir = { 0.0f, 0.0f, -1.0f };
+                Normalize(light_dir);
+                // Get the color by using the dot product.
+                CHAR_INFO c = GetColor(DotProduct(light_dir, normal));
+                triangle_trans.sym = c.Char.UnicodeChar;
+                triangle_trans.col = c.Attributes;
+
+
                 // Projection from 3D ---> 2D
                 for (int i = 0; i < 3; ++i) {
                     MultiplyMatrixVector(triangle_trans.pts[i], triangle_proj.pts[i], mat_projection_);
                 }
+                triangle_proj.sym = triangle_trans.sym;
+                triangle_proj.col = triangle_trans.col;
 
                 // Scaling the Triangle
                 for (int i = 0; i < 3; ++i) {
@@ -185,7 +200,15 @@ public:
                 FillTriangle(triangle_proj.pts[0].x, triangle_proj.pts[0].y,
                     triangle_proj.pts[1].x, triangle_proj.pts[1].y,
                     triangle_proj.pts[2].x, triangle_proj.pts[2].y,
+                    triangle_proj.sym, triangle_proj.col);
+                
+                
+                /*
+                DrawTriangle(triangle_proj.pts[0].x, triangle_proj.pts[0].y,
+                    triangle_proj.pts[1].x, triangle_proj.pts[1].y,
+                    triangle_proj.pts[2].x, triangle_proj.pts[2].y,
                     PIXEL_SOLID, FG_WHITE);
+                 */
             }
         }
 
@@ -307,6 +330,41 @@ private:
         vec.x /= l;
         vec.y /= l;
         vec.z /= l;
+    }
+
+    // =========== Color code from Other Library ========= //
+    // Taken From Command Line Webcam Video
+    CHAR_INFO GetColor(float lum)
+    {
+        short bg_col, fg_col;
+        wchar_t sym;
+        int pixel_bw = (int)(13.0f * lum);
+        switch (pixel_bw)
+        {
+        case 0: bg_col = BG_BLACK; fg_col = FG_BLACK; sym = PIXEL_SOLID; break;
+
+        case 1: bg_col = BG_BLACK; fg_col = FG_DARK_GREY; sym = PIXEL_QUARTER; break;
+        case 2: bg_col = BG_BLACK; fg_col = FG_DARK_GREY; sym = PIXEL_HALF; break;
+        case 3: bg_col = BG_BLACK; fg_col = FG_DARK_GREY; sym = PIXEL_THREEQUARTERS; break;
+        case 4: bg_col = BG_BLACK; fg_col = FG_DARK_GREY; sym = PIXEL_SOLID; break;
+
+        case 5: bg_col = BG_DARK_GREY; fg_col = FG_GREY; sym = PIXEL_QUARTER; break;
+        case 6: bg_col = BG_DARK_GREY; fg_col = FG_GREY; sym = PIXEL_HALF; break;
+        case 7: bg_col = BG_DARK_GREY; fg_col = FG_GREY; sym = PIXEL_THREEQUARTERS; break;
+        case 8: bg_col = BG_DARK_GREY; fg_col = FG_GREY; sym = PIXEL_SOLID; break;
+
+        case 9:  bg_col = BG_GREY; fg_col = FG_WHITE; sym = PIXEL_QUARTER; break;
+        case 10: bg_col = BG_GREY; fg_col = FG_WHITE; sym = PIXEL_HALF; break;
+        case 11: bg_col = BG_GREY; fg_col = FG_WHITE; sym = PIXEL_THREEQUARTERS; break;
+        case 12: bg_col = BG_GREY; fg_col = FG_WHITE; sym = PIXEL_SOLID; break;
+        default:
+            bg_col = BG_BLACK; fg_col = FG_BLACK; sym = PIXEL_SOLID;
+        }
+
+        CHAR_INFO c;
+        c.Attributes = bg_col | fg_col;
+        c.Char.UnicodeChar = sym;
+        return c;
     }
 };
 

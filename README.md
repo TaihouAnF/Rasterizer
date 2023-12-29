@@ -44,8 +44,8 @@ As you can see, this will be an ongoing project and will grow continuously as I 
 
 - [x] Finish object projection and rasterization for simple meshes (primitives)
 - [x] Normals, Illuminating and culling as well as default camera
-- [ ] Cliping
-- [ ] Third Demo: TBD
+- [ ] Optimizing the code structure and, Camera & Clipping (should be done by next Monday as I've done some of it)
+- [ ] TBD
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

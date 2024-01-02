@@ -136,6 +136,8 @@
     <ClInclude Include="Maths\Matrix\Mat4x4.h" />
     <ClInclude Include="olcConsoleGameEngine.h" />
     <ClInclude Include="Maths\Vector\Vector3d.h" />
+    <ClInclude Include="Primitive\Mesh.h" />
+    <ClInclude Include="Primitive\Triangle.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

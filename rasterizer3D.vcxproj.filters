@@ -35,5 +35,11 @@
     <ClInclude Include="Maths\Matrix\Mat4x4.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Primitive\Triangle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Primitive\Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -7,79 +7,12 @@
  * Follow the link here: https://youtu.be/ih20l3pJoeU?si=3iTC-grtO-zyhjuu 
  */
 
-#include <fstream>
-#include <strstream>
 #include <algorithm>
 #include "olcConsoleGameEngine.h"
 #include "Maths/Vector/Vector3d.h"
 #include "Maths/Matrix/Mat4x4.h"
-
-/**
- * @brief A Triangle object with three Vector3d points. 
- */
-struct Triangle {
-    Vector3d pts[3]; // Three vertices
-
-    wchar_t sym;     // Symbol to the color
-    short col;       // Color value? 
-};
-
-/**
- * @brief A Mesh of multiple Triangles, use this to represent arbitrary type of objects.
- */
-struct Mesh {
-    std::vector<Triangle> tris;
-
-    /**
-     * @brief Load obj file using the string "filename".
-     * @param filename The string representing the obj file
-     * @return true if successfully loaded, otherwise false
-    */
-    bool LoadFromObjFile(std::string filename) {
-        std::ifstream f(filename);
-
-        // If the file cannot be opened
-        if (!f.is_open()) {
-            std::cerr << "The file cannot be opened.\n";
-            return false;
-        }
-
-        // A cache for vertices
-        std::vector<Vector3d> vertices;
-        while (!f.eof()) {
-            
-            // String buffer
-            char line[128];
-            
-            // Read the line
-            f.getline(line, 128);
-
-            // String stream buffer
-            std::strstream s;
-
-            // Input the line
-            s << line;
-
-            // Junk, as we don't need the first character to be stored
-            char junk;
-
-            // If currently the line represent a vertex
-            if (line[0] == 'v') {
-                Vector3d vec{};
-                s >> junk >> vec.x >> vec.y >> vec.z;
-                vertices.push_back(vec);
-            }
-            // If currently the line represent a triangle
-            if (line[0] == 'f') {
-                int f[3]{};
-                s >> junk >> f[0] >> f[1] >> f[2];
-                tris.push_back({ vertices[f[0] - 1], vertices[f[1] - 1], vertices[f[2] - 1] });
-            }
-        }
-
-        return true;
-    }
-};
+#include "Primitive/Triangle.h"
+#include "Primitive/Mesh.h"
 
 /**
  * @brief A new class inherit from olcConsoleGameEngine
@@ -122,47 +55,58 @@ public:
         // Fill the background With color, only works on first project
         Fill(0, 0, ScreenWidth(), ScreenHeight(), PIXEL_SOLID, FG_BLACK);
 
-        // Setting Up Rotation Matrices
-        Mat4x4 mat_rot_z, mat_rot_x;
+        // Now we move the transformation outside the for loop, and make it a whole transform matrix
+
         theta_ += 1.0f * delta_time;
+        
+        // Rotation Z and X matrices
+        Mat4x4 mat_rot_z, mat_rot_x;
+        mat_rot_z = MakeRotationZ(theta_ * 0.5f);
+        mat_rot_x = MakeRotationX(theta_);
 
-        // Rotation Z
-        mat_rot_z = MakeRotationZ(theta_);
+        // Translation matrix
+        Mat4x4 mat_trans = MakeTranslation(0.0f, 0.0f, 16.0f);
 
-        // Rotation X
-        mat_rot_x = MakeRotationX(theta_ * 0.5f);
-
+        // World matrix, Final transformation matrix
+        Mat4x4 mat_world = MakeIdentity();
+        mat_world = MultiplyMatrix(mat_rot_z, mat_rot_x);
+        mat_world = MultiplyMatrix(mat_world, mat_trans);
+        
         // In order to use painter algorithm, we need a new array to cache the triangles
         std::vector<Triangle> sort_tri_raster;
 
         // Draw Triangles/Mesh, so far we only have a vector array of Triangles.
         // thus, we use for loop
         for (auto& tri : mesh_cube_.tris) {
-            Triangle triangle_proj{}, triangle_trans{}, triangle_rotate_z{}, triangle_rotate_zx{};
+            Triangle triangle_proj{}, triangle_transform{};
             
-            // Rotate on Z axis
-            for (int i = 0; i < 3; ++i) {
-                MultiplyMatrixVector(tri.pts[i], triangle_rotate_z.pts[i], mat_rot_z);
-            }
+            //// Rotate on Z axis
+            //for (int i = 0; i < 3; ++i) {
+            //    MultiplyMatrixVector(tri.pts[i], triangle_rotate_z.pts[i], mat_rot_z);
+            //}
 
-            // Rotate on X axis
-            for (int i = 0; i < 3; ++i) {
-                MultiplyMatrixVector(triangle_rotate_z.pts[i], triangle_rotate_zx.pts[i], mat_rot_x);
-            }
+            //// Rotate on X axis
+            //for (int i = 0; i < 3; ++i) {
+            //    MultiplyMatrixVector(triangle_rotate_z.pts[i], triangle_rotate_zx.pts[i], mat_rot_x);
+            //}
 
-            // Translate, struct can have curly brace initialization here since C++11, and 
-            // we only put an offset of 3.0f further. Now, as the ship is bigger, we need to put it further away 
-            // to avoid stuttering.
-            Vector3d translation = { 0.0f, 0.0f, 8.0f };
-            // triangle_trans = triangle_rotate_zx; this line is redundant
+            //// Translate, struct can have curly brace initialization here since C++11, and 
+            //// we only put an offset of 3.0f further. Now, as the ship is bigger, we need to put it further away 
+            //// to avoid stuttering.
+            //Vector3d translation = { 0.0f, 0.0f, 8.0f };
+            //// triangle_trans = triangle_rotate_zx; this line is redundant
+            //for (int i = 0; i < 3; ++i) {
+            //    VectorAdd(triangle_rotate_zx.pts[i], translation, triangle_trans.pts[i]);
+            //}
+
             for (int i = 0; i < 3; ++i) {
-                VectorAdd(triangle_rotate_zx.pts[i], translation, triangle_trans.pts[i]);
+                triangle_transform.pts[i] = MultiplyMatrixVector(tri.pts[i], mat_world);
             }
 
             // Calculate the normal first before the projection
             Vector3d normal{}, line_1{}, line_2{};
-            VectorSub(triangle_trans.pts[1], triangle_trans.pts[0], line_1);
-            VectorSub(triangle_trans.pts[2], triangle_trans.pts[0], line_2);
+            VectorSub(triangle_transform.pts[1], triangle_transform.pts[0], line_1);
+            VectorSub(triangle_transform.pts[2], triangle_transform.pts[0], line_2);
             CrossProduct(line_1, line_2, normal);
             Normalize(normal);
             
@@ -171,23 +115,23 @@ public:
              * so we introduce a dot product here. 
              * And we can take any points on the triangle as they are all on the same plane.
              */
-            if (DotProduct(normal, VectorSub(triangle_trans.pts[0], cam_)) < 0) {
+            if (DotProduct(normal, VectorSub(triangle_transform.pts[0], cam_)) < 0) {
 
                 // Illumination before projection, temporarily
                 Vector3d light_dir = { 0.0f, 0.0f, -1.0f };
                 Normalize(light_dir);
                 // Get the color by using the dot product.
                 CHAR_INFO c = GetColor(DotProduct(light_dir, normal));
-                triangle_trans.sym = c.Char.UnicodeChar;
-                triangle_trans.col = c.Attributes;
+                triangle_transform.sym = c.Char.UnicodeChar;
+                triangle_transform.col = c.Attributes;
 
 
                 // Projection from 3D ---> 2D
                 for (int i = 0; i < 3; ++i) {
-                    MultiplyMatrixVector(triangle_trans.pts[i], triangle_proj.pts[i], mat_projection_);
+                    MultiplyMatrixVector(triangle_transform.pts[i], triangle_proj.pts[i], mat_projection_);
                 }
-                triangle_proj.sym = triangle_trans.sym;
-                triangle_proj.col = triangle_trans.col;
+                triangle_proj.sym = triangle_transform.sym;
+                triangle_proj.col = triangle_transform.col;
 
                 // Scaling the Triangle
                 for (int i = 0; i < 3; ++i) {

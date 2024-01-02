@@ -29,5 +29,8 @@
     <ClInclude Include="Maths\Vector\Vector3d.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Maths\Matrix\Mat4x4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

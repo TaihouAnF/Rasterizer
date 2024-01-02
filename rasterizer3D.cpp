@@ -12,6 +12,7 @@
 #include <algorithm>
 #include "olcConsoleGameEngine.h"
 #include "Maths/Vector/Vector3d.h"
+#include "Maths/Matrix/Mat4x4.h"
 
 constexpr float PI = 3.14159f;
 
@@ -80,13 +81,6 @@ struct Mesh {
 
         return true;
     }
-};
-
-/**
- * @brief A 4 by 4 matrix, initialize with 0.0f.
- */
-struct Mat4x4 {
-    float m[4][4] = { 0 };
 };
 
 /**

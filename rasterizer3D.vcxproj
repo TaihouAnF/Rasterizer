@@ -132,6 +132,7 @@
     <ClCompile Include="Maths\Vector\Vector3d.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Maths\Matrix\Mat4x4.h" />
     <ClInclude Include="olcConsoleGameEngine.h" />
     <ClInclude Include="Maths\Vector\Vector3d.h" />
   </ItemGroup>

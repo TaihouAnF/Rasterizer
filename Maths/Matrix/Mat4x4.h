@@ -112,16 +112,17 @@ Mat4x4 MultiplyMatrix(Mat4x4& m1, Mat4x4& m2);
  ------------------------ */
 
 /**
- * @brief This looks like setting up the camera coordinate/space
- * @param pos 
- * @param target 
- * @param up 
- * @return 
+ * @brief Making a point-at matrix for converting world space into camera coordinates. 
+ * (This looks like setting up the camera coordinate/space)
+ * @param pos The original position of the camera
+ * @param target The look at target
+ * @param up The helper up direction
+ * @return The converting matrix
  */
 Mat4x4 PointAt(Vector3d& pos, Vector3d& target, Vector3d& up);
 
 /**
- * @brief Inverse the given matrix.
+ * @brief Inverse the given matrix. Only for 4x4 and rotation and translation
  * @param m The input matrix
  * @return A new matrix after inversed
  */

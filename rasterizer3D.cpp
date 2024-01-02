@@ -29,7 +29,7 @@ public:
      */
     bool OnUserCreate() override {
         // Using load file
-        mesh_cube_.LoadFromObjFile("teapot.obj");
+        mesh_cube_.LoadFromObjFile("axis.obj");
         
         // Projection Matrix
         float near_plane = 0.1f;
@@ -52,12 +52,28 @@ public:
      */
     bool OnUserUpdate(float delta_time) override {
 
+        // User Control
+        if (GetKey(VK_UP).bHeld) {
+            cam_.y += 8.0f * delta_time;
+        }
+
+        if (GetKey(VK_DOWN).bHeld) {
+            cam_.y -= 8.0f * delta_time;
+        }
+
+        if (GetKey(VK_LEFT).bHeld) {
+            cam_.x -= 8.0f * delta_time;
+        }
+
+        if (GetKey(VK_RIGHT).bHeld) {
+            cam_.x += 8.0f * delta_time;
+        }
+
+
         // Fill the background With color, only works on first project
         Fill(0, 0, ScreenWidth(), ScreenHeight(), PIXEL_SOLID, FG_BLACK);
 
         // Now we move the transformation outside the for loop, and make it a whole transform matrix
-
-        theta_ += 1.0f * delta_time;
         
         // Rotation Z and X matrices
         Mat4x4 mat_rot_z, mat_rot_x;
@@ -72,13 +88,26 @@ public:
         mat_world = MultiplyMatrix(mat_rot_z, mat_rot_x);
         mat_world = MultiplyMatrix(mat_world, mat_trans);
         
+        look_dir_ = { 0.0f, 0.0f, 1.0f };
+        // Helper Up vector
+        Vector3d up = { 0.0f, 1.0f, 0.0f };
+
+        Vector3d target = VectorAdd(cam_, look_dir_);
+
+        // Camera matrix
+        Mat4x4 mat_cam = PointAt(cam_, target, up);
+
+        // View matrix/Inverse
+        Mat4x4 mat_view = Inverse(mat_cam);
+
         // In order to use painter algorithm, we need a new array to cache the triangles
         std::vector<Triangle> sort_tri_raster;
 
         // Draw Triangles/Mesh, so far we only have a vector array of Triangles.
         // thus, we use for loop
         for (auto& tri : mesh_cube_.tris) {
-            Triangle triangle_proj{}, triangle_transform{};
+            // This represent 3 different stage of rendering pipeline
+            Triangle triangle_proj{}, triangle_transform{}, triangle_view{};
 
             // Make the Transform
             for (int i = 0; i < 3; ++i) {
@@ -91,7 +120,7 @@ public:
             VectorSub(triangle_transform.pts[2], triangle_transform.pts[0], line_2);
             CrossProduct(line_1, line_2, normal);
             Normalize(normal);
-            
+
             /**
              * Now we actually have a camera, we want to make sure the normal is facing the camera direction, 
              * so we introduce a dot product here. 
@@ -114,17 +143,27 @@ public:
                 triangle_transform.sym = c.Char.UnicodeChar;
                 triangle_transform.col = c.Attributes;
 
+                // Before projection, we want to Convert world space --> camera space/view space
+                for (int i = 0; i < 3; ++i) {
+                    triangle_view.pts[i] = MultiplyMatrixVector(triangle_transform.pts[i], mat_view);
+                }
 
                 // Projection from 3D ---> 2D
                 for (int i = 0; i < 3; ++i) {
-                    // projection
-                    MultiplyMatrixVector(triangle_transform.pts[i], triangle_proj.pts[i], mat_projection_);
+                    // Projection
+                    MultiplyMatrixVector(triangle_view.pts[i], triangle_proj.pts[i], mat_projection_);
                     
-                    // normalize
+                    // Normalize
                     triangle_proj.pts[i] = VectorDiv(triangle_proj.pts[i], triangle_proj.pts[i].w);
                 }
                 triangle_proj.sym = triangle_transform.sym;
                 triangle_proj.col = triangle_transform.col;
+
+                // The axis are upside down, change them back
+                for (int i = 0; i < 3; ++i) {
+                    triangle_proj.pts[i].x *= -1.0f;
+                    triangle_proj.pts[i].y *= -1.0f;
+                }
 
                 // Scaling the Triangle
                 // Offset vector
@@ -140,7 +179,7 @@ public:
             }
         }
 
-        // sort them using painter algo
+        // Sort them using painter algo
         std::sort(sort_tri_raster.begin(), sort_tri_raster.end(), [](Triangle& t_1, Triangle& t_2) {
             float z1 = (t_1.pts[0].z + t_1.pts[1].z + t_1.pts[2].z) / 3.0f;
             float z2 = (t_2.pts[0].z + t_2.pts[1].z + t_2.pts[2].z) / 3.0f;
@@ -163,6 +202,7 @@ private:
     Mesh mesh_cube_;        // A Mesh used in default
     Mat4x4 mat_projection_; // A project matrix
     Vector3d cam_;          // A temporary camera currently, we set it to the origin first
+    Vector3d look_dir_;     // The look at direction, should be unit length
     float theta_;           // Rotation angle
 
     // ===================== Things are getting messy, maybe I should make this into another file ================ //

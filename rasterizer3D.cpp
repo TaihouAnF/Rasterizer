@@ -14,8 +14,6 @@
 #include "Maths/Vector/Vector3d.h"
 #include "Maths/Matrix/Mat4x4.h"
 
-constexpr float PI = 3.14159f;
-
 /**
  * @brief A Triangle object with three Vector3d points. 
  */
@@ -97,34 +95,6 @@ public:
      * @return true if successfully created, otherwise false.
      */
     bool OnUserCreate() override {
-        
-        // Create a Cube with 6 faces. Here we use struct initialization here.
-        //mesh_cube_.tris = {
-        //    // SOUTH
-        //    { 0.0f, 0.0f, 0.0f,    0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 0.0f },
-        //    { 0.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 0.0f, 0.0f },
-
-        //    // EAST                                                      
-        //    { 1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 0.0f,    1.0f, 1.0f, 1.0f },
-        //    { 1.0f, 0.0f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 0.0f, 1.0f },
-
-        //    // NORTH                                                     
-        //    { 1.0f, 0.0f, 1.0f,    1.0f, 1.0f, 1.0f,    0.0f, 1.0f, 1.0f },
-        //    { 1.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 0.0f, 1.0f },
-
-        //    // WEST                                                      
-        //    { 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 1.0f,    0.0f, 1.0f, 0.0f },
-        //    { 0.0f, 0.0f, 1.0f,    0.0f, 1.0f, 0.0f,    0.0f, 0.0f, 0.0f },
-
-        //    // TOP                                                       
-        //    { 0.0f, 1.0f, 0.0f,    0.0f, 1.0f, 1.0f,    1.0f, 1.0f, 1.0f },
-        //    { 0.0f, 1.0f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 1.0f, 0.0f },
-
-        //    // BOTTOM                                                    
-        //    { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f },
-        //    { 1.0f, 0.0f, 1.0f,    0.0f, 0.0f, 0.0f,    1.0f, 0.0f, 0.0f },
-        //};
-
         // Using load file
         mesh_cube_.LoadFromObjFile("VideoShip.obj");
         
@@ -133,16 +103,10 @@ public:
         float far_plane = 1000.0f;
         float fov = 90.0f;  // FOV as usual
         float aspect_ratio = (float)ScreenHeight() / (float)ScreenWidth();
-        float fov_radius = 1.0f / tanf(fov * 0.5f / 180.0f * PI);
         cam_ = { 0.0f, 0.0f, 0.0f };    // The cam are set to origin for simplicity
 
         // Setting up the projection matrix
-        mat_projection_.m[0][0] = aspect_ratio * fov_radius;
-        mat_projection_.m[1][1] = fov_radius;
-        mat_projection_.m[2][2] = far_plane / (fov_radius - near_plane);
-        mat_projection_.m[3][2] = (-far_plane * near_plane) / (far_plane - near_plane);
-        mat_projection_.m[2][3] = 1.0f;
-        mat_projection_.m[3][3] = 0.0f;
+        mat_projection_ = MakeProjection(fov, aspect_ratio, near_plane, far_plane);
 
         // Return true to indicate it works without error.
         return true;
@@ -163,20 +127,10 @@ public:
         theta_ += 1.0f * delta_time;
 
         // Rotation Z
-        mat_rot_z.m[0][0] = cosf(theta_);
-        mat_rot_z.m[0][1] = sinf(theta_);
-        mat_rot_z.m[1][0] = -sinf(theta_);
-        mat_rot_z.m[1][1] = cosf(theta_);
-        mat_rot_z.m[2][2] = 1;
-        mat_rot_z.m[3][3] = 1;
+        mat_rot_z = MakeRotationZ(theta_);
 
         // Rotation X
-        mat_rot_x.m[0][0] = 1;
-        mat_rot_x.m[1][1] = cosf(theta_ * 0.5f);
-        mat_rot_x.m[1][2] = sinf(theta_ * 0.5f);
-        mat_rot_x.m[2][1] = -sinf(theta_ * 0.5f);
-        mat_rot_x.m[2][2] = cosf(theta_ * 0.5f);
-        mat_rot_x.m[3][3] = 1;
+        mat_rot_x = MakeRotationX(theta_ * 0.5f);
 
         // In order to use painter algorithm, we need a new array to cache the triangles
         std::vector<Triangle> sort_tri_raster;

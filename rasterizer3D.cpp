@@ -29,7 +29,7 @@ public:
      */
     bool OnUserCreate() override {
         // Using load file
-        mesh_cube_.LoadFromObjFile("VideoShip.obj");
+        mesh_cube_.LoadFromObjFile("teapot.obj");
         
         // Projection Matrix
         float near_plane = 0.1f;
@@ -164,7 +164,6 @@ private:
     Mat4x4 mat_projection_; // A project matrix
     Vector3d cam_;          // A temporary camera currently, we set it to the origin first
     float theta_;           // Rotation angle
-
 
     // ===================== Things are getting messy, maybe I should make this into another file ================ //
 

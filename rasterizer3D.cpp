@@ -79,26 +79,8 @@ public:
         // thus, we use for loop
         for (auto& tri : mesh_cube_.tris) {
             Triangle triangle_proj{}, triangle_transform{};
-            
-            //// Rotate on Z axis
-            //for (int i = 0; i < 3; ++i) {
-            //    MultiplyMatrixVector(tri.pts[i], triangle_rotate_z.pts[i], mat_rot_z);
-            //}
 
-            //// Rotate on X axis
-            //for (int i = 0; i < 3; ++i) {
-            //    MultiplyMatrixVector(triangle_rotate_z.pts[i], triangle_rotate_zx.pts[i], mat_rot_x);
-            //}
-
-            //// Translate, struct can have curly brace initialization here since C++11, and 
-            //// we only put an offset of 3.0f further. Now, as the ship is bigger, we need to put it further away 
-            //// to avoid stuttering.
-            //Vector3d translation = { 0.0f, 0.0f, 8.0f };
-            //// triangle_trans = triangle_rotate_zx; this line is redundant
-            //for (int i = 0; i < 3; ++i) {
-            //    VectorAdd(triangle_rotate_zx.pts[i], translation, triangle_trans.pts[i]);
-            //}
-
+            // Make the Transform
             for (int i = 0; i < 3; ++i) {
                 triangle_transform.pts[i] = MultiplyMatrixVector(tri.pts[i], mat_world);
             }
@@ -115,28 +97,40 @@ public:
              * so we introduce a dot product here. 
              * And we can take any points on the triangle as they are all on the same plane.
              */
-            if (DotProduct(normal, VectorSub(triangle_transform.pts[0], cam_)) < 0) {
+
+            Vector3d cam_ray = VectorSub(triangle_transform.pts[0], cam_);
+
+            if (DotProduct(normal, cam_ray) < 0) {
 
                 // Illumination before projection, temporarily
-                Vector3d light_dir = { 0.0f, 0.0f, -1.0f };
+                Vector3d light_dir = { 0.0f, 1.0f, -1.0f };
                 Normalize(light_dir);
+
+                // How "aligned" are light direction and triangle surface normal?
+                float dp = max(0.1f, DotProduct(light_dir, normal));
+
                 // Get the color by using the dot product.
-                CHAR_INFO c = GetColor(DotProduct(light_dir, normal));
+                CHAR_INFO c = GetColor(dp);
                 triangle_transform.sym = c.Char.UnicodeChar;
                 triangle_transform.col = c.Attributes;
 
 
                 // Projection from 3D ---> 2D
                 for (int i = 0; i < 3; ++i) {
+                    // projection
                     MultiplyMatrixVector(triangle_transform.pts[i], triangle_proj.pts[i], mat_projection_);
+                    
+                    // normalize
+                    triangle_proj.pts[i] = VectorDiv(triangle_proj.pts[i], triangle_proj.pts[i].w);
                 }
                 triangle_proj.sym = triangle_transform.sym;
                 triangle_proj.col = triangle_transform.col;
 
                 // Scaling the Triangle
+                // Offset vector
+                Vector3d offset = { 1, 1, 0 };
                 for (int i = 0; i < 3; ++i) {
-                    triangle_proj.pts[i].x += 1.0f;
-                    triangle_proj.pts[i].y += 1.0f;
+                    triangle_proj.pts[i] = VectorAdd(triangle_proj.pts[i], offset);
                     triangle_proj.pts[i].x *= 0.5f * (float)ScreenWidth();
                     triangle_proj.pts[i].y *= 0.5f * (float)ScreenHeight();
                 }
@@ -159,12 +153,6 @@ public:
                 tri.pts[1].x, tri.pts[1].y,
                 tri.pts[2].x, tri.pts[2].y,
                 tri.sym, tri.col);
-
-            // For Debug purpose
-            DrawTriangle(tri.pts[0].x, tri.pts[0].y,
-                tri.pts[1].x, tri.pts[1].y,
-                tri.pts[2].x, tri.pts[2].y,
-                PIXEL_SOLID, FG_BLACK);
         }
 
         // Return true to indicate it works without error.
@@ -228,14 +216,3 @@ int main()
     }
     return 0;
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file

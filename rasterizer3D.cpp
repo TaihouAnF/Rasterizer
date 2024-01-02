@@ -282,26 +282,6 @@ private:
 
     // ===================== Things are getting messy, maybe I should make this into another file ================ //
 
-    /**
-     * @brief This method helps to do the matrix calculation with matrix and vector,
-     * it uses pass-in by reference to save some space.
-     * @param i The input vector.
-     * @param out The result vector.
-     * @param matrix The matrix.
-     */
-    void MultiplyMatrixVector(Vector3d& i, Vector3d& out, Mat4x4& matrix) {
-        out.x = i.x * matrix.m[0][0] + i.y * matrix.m[1][0] + i.z * matrix.m[2][0] + matrix.m[3][0];
-        out.y = i.x * matrix.m[0][1] + i.y * matrix.m[1][1] + i.z * matrix.m[2][1] + matrix.m[3][1];
-        out.z = i.x * matrix.m[0][2] + i.y * matrix.m[1][2] + i.z * matrix.m[2][2] + matrix.m[3][2];
-        float w = i.x * matrix.m[0][3] + i.y * matrix.m[1][3] + i.z * matrix.m[2][3] + matrix.m[3][3];
-
-        if (w != 0.0f) {
-            out.x /= w;
-            out.y /= w;
-            out.z /= w;
-        }
-    }
-
     // =========== Color code from Other Library ========= //
     // Taken From Command Line Webcam Video
     CHAR_INFO GetColor(float lum)

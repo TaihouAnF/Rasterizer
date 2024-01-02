@@ -5,6 +5,19 @@
  */
 struct Vector3d {
     float x, y, z, w;
+
+    /**
+     * @brief Constructor
+     */
+    Vector3d();
+
+    /**
+     * @brief Constructor with new x y z
+     * @param new_x 
+     * @param new_y 
+     * @param new_z 
+     */
+    Vector3d(float new_x, float new_y, float new_z);
 };
 
 /* ---------------------------------

@@ -1,6 +1,10 @@
 #include <fstream>
 #include "Vector3d.h"
 
+Vector3d::Vector3d() : x(0.0f), y(0.0f), z(0.0f), w(1.0f) {}
+
+Vector3d::Vector3d(float new_x, float new_y, float new_z)  : x(new_x), y(new_y), z(new_z), w(1.0f) {}
+
 void VectorAdd(Vector3d& input_a, Vector3d& input_b, Vector3d& out) {
     out.x = input_a.x + input_b.x;
     out.y = input_a.y + input_b.y;
@@ -105,3 +109,5 @@ Vector3d NormalizeToNew(Vector3d& vec) {
 Vector3d IntersectPlane(Vector3d& plane_p, Vector3d& plane_n, Vector3d& line_start, Vector3d& line_end) {
     return Vector3d();
 }
+
+

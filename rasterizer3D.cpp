@@ -52,7 +52,7 @@ public:
      */
     bool OnUserUpdate(float delta_time) override {
 
-        // User Control
+        // User Control using arrow keys
         if (GetKey(VK_UP).bHeld) {
             cam_.y += 8.0f * delta_time;
         }
@@ -69,6 +69,25 @@ public:
             cam_.x += 8.0f * delta_time;
         }
 
+        // FPS control
+        // we make a forward velocity vector
+        Vector3d forward = VectorMul(look_dir_, 8.0f * delta_time);
+
+        if (GetKey(L'W').bHeld) {
+            cam_ = VectorAdd(cam_, forward);
+        }
+
+        if (GetKey(L'S').bHeld) {
+            cam_ = VectorSub(cam_, forward);
+        }
+
+        if (GetKey(L'A').bHeld) {
+            yaw_ -= 2.0f * delta_time;
+        }
+
+        if (GetKey(L'D').bHeld) {
+            yaw_ += 2.0f * delta_time;
+        }
 
         // Fill the background With color, only works on first project
         Fill(0, 0, ScreenWidth(), ScreenHeight(), PIXEL_SOLID, FG_BLACK);
@@ -88,11 +107,14 @@ public:
         mat_world = MultiplyMatrix(mat_rot_z, mat_rot_x);
         mat_world = MultiplyMatrix(mat_world, mat_trans);
         
-        look_dir_ = { 0.0f, 0.0f, 1.0f };
         // Helper Up vector
         Vector3d up = { 0.0f, 1.0f, 0.0f };
 
-        Vector3d target = VectorAdd(cam_, look_dir_);
+        Vector3d target = { 0.0f, 0.0f, 1.0f };
+        Mat4x4 mat_cam_rot = MakeRotationY(yaw_);
+
+        look_dir_ = MultiplyMatrixVector(target, mat_cam_rot);
+        target = VectorAdd(cam_, look_dir_);
 
         // Camera matrix
         Mat4x4 mat_cam = PointAt(cam_, target, up);
@@ -204,6 +226,7 @@ private:
     Vector3d cam_;          // A temporary camera currently, we set it to the origin first
     Vector3d look_dir_;     // The look at direction, should be unit length
     float theta_;           // Rotation angle
+    float yaw_;             // An angle for FPS look direction
 
     // ===================== Things are getting messy, maybe I should make this into another file ================ //
 

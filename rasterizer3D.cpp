@@ -11,15 +11,9 @@
 #include <strstream>
 #include <algorithm>
 #include "olcConsoleGameEngine.h"
+#include "Maths/Vector/Vector3d.h"
 
 constexpr float PI = 3.14159f;
-
-/**
- * @brief A 3D vector in space, x y and z represents coordinate in 3D space.
- */
-struct Vector3d {
-    float x, y, z;
-};
 
 /**
  * @brief A Triangle object with three Vector3d points. 
@@ -214,13 +208,13 @@ public:
             Vector3d translation = { 0.0f, 0.0f, 8.0f };
             // triangle_trans = triangle_rotate_zx; this line is redundant
             for (int i = 0; i < 3; ++i) {
-                VectorAddition(triangle_rotate_zx.pts[i], translation, triangle_trans.pts[i]);
+                VectorAdd(triangle_rotate_zx.pts[i], translation, triangle_trans.pts[i]);
             }
 
             // Calculate the normal first before the projection
             Vector3d normal{}, line_1{}, line_2{};
-            VectorSubtraction(triangle_trans.pts[1], triangle_trans.pts[0], line_1);
-            VectorSubtraction(triangle_trans.pts[2], triangle_trans.pts[0], line_2);
+            VectorSub(triangle_trans.pts[1], triangle_trans.pts[0], line_1);
+            VectorSub(triangle_trans.pts[2], triangle_trans.pts[0], line_2);
             CrossProduct(line_1, line_2, normal);
             Normalize(normal);
             
@@ -229,7 +223,7 @@ public:
              * so we introduce a dot product here. 
              * And we can take any points on the triangle as they are all on the same plane.
              */
-            if (DotProduct(normal, VectorSubtraction(triangle_trans.pts[0], cam_)) < 0) {
+            if (DotProduct(normal, VectorSub(triangle_trans.pts[0], cam_)) < 0) {
 
                 // Illumination before projection, temporarily
                 Vector3d light_dir = { 0.0f, 0.0f, -1.0f };
@@ -312,93 +306,6 @@ private:
             out.y /= w;
             out.z /= w;
         }
-    }
-
-    /**
-     * @brief This method performs vector addition, both vector should be the same size.
-     * @param input_a One parameter vector
-     * @param input_b The other parameter vector
-     * @param out The result vector 
-     */
-    void VectorAddition(Vector3d& input_a, Vector3d& input_b, Vector3d& out) {
-        out.x = input_a.x + input_b.x;
-        out.y = input_a.y + input_b.y;
-        out.z = input_a.z + input_b.z;
-    }
-
-    /**
-     * @brief Overloaded version of previous addition.
-     * @param input_a One parameter vector
-     * @param input_b The other parameter vector
-     * @return The result vector
-     */
-    Vector3d VectorAddition(Vector3d& input_a, Vector3d& input_b) {
-        Vector3d res = { 0.0f, 0.0f, 0.0f };
-        res.x = input_a.x + input_b.x;
-        res.y = input_a.y + input_b.y;
-        res.z = input_a.z + input_b.z;
-        return res;
-    }
-
-    /**
-     * @brief Similar to Addition.
-     * @param input_a One parameter vector
-     * @param input_b The other parameter vector
-     * @param out The result vector
-     */
-    void VectorSubtraction(Vector3d& input_a, Vector3d& input_b, Vector3d& out) {
-        out.x = input_a.x - input_b.x;
-        out.y = input_a.y - input_b.y;
-        out.z = input_a.z - input_b.z;
-    }
-
-    /**
-     * @brief This method is an overloaded version of previous subtraction
-     * @param input_a One parameter vector
-     * @param input_b The other parameter vector
-     * @return The result vector
-    */
-    Vector3d VectorSubtraction(Vector3d& input_a, Vector3d& input_b) {
-        Vector3d res{};
-        res.x = input_a.x - input_b.x;
-        res.y = input_a.y - input_b.y;
-        res.z = input_a.z - input_b.z;
-        return res;
-    }
-
-    /**
-     * @brief Compute the dot product between two vectors in 3d.
-     * @param input_a One parameter vector
-     * @param input_b The other parameter vector
-     * @return the final product of the dot product operation
-     */
-    float DotProduct(Vector3d input_a, Vector3d input_b) {
-        return input_a.x * input_b.x +
-            input_a.y * input_b.y +
-            input_a.z * input_b.z;
-    }
-
-    /**
-     * @brief This method performs a cross product of input_a and input_b in 3d.
-     * @param input_a One parameter vector
-     * @param input_b The other parameter vector
-     * @param out The result vector
-     */
-    void CrossProduct(Vector3d& input_a, Vector3d& input_b, Vector3d& out) {
-        out.x = input_a.y * input_b.z - input_a.z * input_b.y;
-        out.y = input_a.z * input_b.x - input_a.x * input_b.z;
-        out.z = input_a.x * input_b.y - input_a.y * input_b.x;
-    }
-
-    /**
-     * @brief Normalize the vector.
-     * @param vec The Vector3d we need to normalize.
-    */
-    void Normalize(Vector3d& vec) {
-        float l = std::sqrtf(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
-        vec.x /= l;
-        vec.y /= l;
-        vec.z /= l;
     }
 
     // =========== Color code from Other Library ========= //

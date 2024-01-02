@@ -18,9 +18,15 @@
     <ClCompile Include="rasterizer3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Maths\Vector\Vector3d.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="olcConsoleGameEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Maths\Vector\Vector3d.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

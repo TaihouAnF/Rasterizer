@@ -19,7 +19,8 @@ struct Mesh {
      * @return true if successfully loaded, otherwise false
     */
     bool LoadFromObjFile(std::string filename) {
-        std::ifstream f(filename);
+        std::string path = "Objects/" + filename;
+        std::ifstream f(path);
 
         // If the file cannot be opened
         if (!f.is_open()) {

@@ -107,7 +107,14 @@ Vector3d NormalizeToNew(Vector3d& vec) {
 }
 
 Vector3d IntersectPlane(Vector3d& plane_p, Vector3d& plane_n, Vector3d& line_start, Vector3d& line_end) {
-    return Vector3d();
+    plane_n = NormalizeToNew(plane_n);
+    float plane_d = -DotProduct(plane_n, plane_p);
+    float ad = DotProduct(line_start, plane_n);
+    float bd = DotProduct(line_end, plane_n);
+    float t = (-plane_d - ad) / (bd - ad);
+    Vector3d line_start_to_end = VectorSub(line_end, line_start);
+    Vector3d line_intersect = VectorMul(line_start_to_end, t);
+    return VectorAdd(line_start, line_intersect);
 }
 
 

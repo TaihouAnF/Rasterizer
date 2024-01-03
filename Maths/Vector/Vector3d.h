@@ -156,11 +156,11 @@ void Normalize(Vector3d& vec);
 Vector3d NormalizeToNew(Vector3d& vec);
 
 /**
- * @brief 
- * @param plane_p 
- * @param plane_n 
- * @param line_start 
- * @param line_end 
- * @return 
+ * @brief Performs a intersection test with line/vector and return the intersection points in Vector 3d
+ * @param plane_p The input plane points
+ * @param plane_n The normal of input plane
+ * @param line_start The line starting position
+ * @param line_end The line ending position
+ * @return The intersection point
  */
 Vector3d IntersectPlane(Vector3d& plane_p, Vector3d& plane_n, Vector3d& line_start, Vector3d& line_end);

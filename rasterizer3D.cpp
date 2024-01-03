@@ -29,7 +29,7 @@ public:
      */
     bool OnUserCreate() override {
         // Using load file
-        mesh_cube_.LoadFromObjFile("axis.obj");
+        mesh_cube_.LoadFromObjFile("mountains.obj");
         
         // Projection Matrix
         float near_plane = 0.1f;
@@ -88,9 +88,6 @@ public:
         if (GetKey(L'D').bHeld) {
             yaw_ += 2.0f * delta_time;
         }
-
-        // Fill the background With color, only works on first project
-        Fill(0, 0, ScreenWidth(), ScreenHeight(), PIXEL_SOLID, FG_BLACK);
 
         // Now we move the transformation outside the for loop, and make it a whole transform matrix
         
@@ -170,34 +167,48 @@ public:
                     triangle_view.pts[i] = MultiplyMatrixVector(triangle_transform.pts[i], mat_view);
                 }
 
-                // Projection from 3D ---> 2D
-                for (int i = 0; i < 3; ++i) {
-                    // Projection
-                    MultiplyMatrixVector(triangle_view.pts[i], triangle_proj.pts[i], mat_projection_);
+                triangle_view.col = triangle_transform.col;
+                triangle_view.sym = triangle_transform.sym;
+
+                // Clip views 
+                int clipped_cnt = 0;
+                Triangle clipped[2];
+                clipped_cnt = ClipAgainstPlane({ 0.0f, 0.0f, 2.1f }, { 0.0f, 0.0f, 1.0f }, triangle_view, clipped[0], clipped[1]);
+
+
+                for (int n = 0; n < clipped_cnt; ++n) {
+                    // Projection from 3D ---> 2D
+                    for (int i = 0; i < 3; ++i) {
+                        // Projection
+                        MultiplyMatrixVector(clipped[n].pts[i], triangle_proj.pts[i], mat_projection_);
+                    }
+                    triangle_proj.col = clipped[n].col;
+                    triangle_proj.sym = clipped[n].sym;
                     
-                    // Normalize
-                    triangle_proj.pts[i] = VectorDiv(triangle_proj.pts[i], triangle_proj.pts[i].w);
-                }
-                triangle_proj.sym = triangle_transform.sym;
-                triangle_proj.col = triangle_transform.col;
 
-                // The axis are upside down, change them back
-                for (int i = 0; i < 3; ++i) {
-                    triangle_proj.pts[i].x *= -1.0f;
-                    triangle_proj.pts[i].y *= -1.0f;
-                }
+                    for (int i = 0; i < 3; ++i) {
+                        // Normalize
+                        triangle_proj.pts[i] = VectorDiv(triangle_proj.pts[i], triangle_proj.pts[i].w);
+                    }
 
-                // Scaling the Triangle
-                // Offset vector
-                Vector3d offset = { 1, 1, 0 };
-                for (int i = 0; i < 3; ++i) {
-                    triangle_proj.pts[i] = VectorAdd(triangle_proj.pts[i], offset);
-                    triangle_proj.pts[i].x *= 0.5f * (float)ScreenWidth();
-                    triangle_proj.pts[i].y *= 0.5f * (float)ScreenHeight();
-                }
+                    // The axis are upside down, change them back
+                    for (int i = 0; i < 3; ++i) {
+                        triangle_proj.pts[i].x *= -1.0f;
+                        triangle_proj.pts[i].y *= -1.0f;
+                    }
 
-                // Push them into the triangle cache
-                sort_tri_raster.push_back(triangle_proj);
+                    // Scaling the Triangle
+                    // Offset vector
+                    Vector3d offset = { 1, 1, 0 };
+                    for (int i = 0; i < 3; ++i) {
+                        triangle_proj.pts[i] = VectorAdd(triangle_proj.pts[i], offset);
+                        triangle_proj.pts[i].x *= 0.5f * (float)ScreenWidth();
+                        triangle_proj.pts[i].y *= 0.5f * (float)ScreenHeight();
+                    }
+
+                    // Push them into the triangle cache
+                    sort_tri_raster.push_back(triangle_proj);
+                }
             }
         }
 
@@ -208,12 +219,56 @@ public:
             return z1 > z2;
         });
 
+        // Fill the background With color, only works on first project
+        Fill(0, 0, ScreenWidth(), ScreenHeight(), PIXEL_SOLID, FG_BLACK);
+
         for (auto& tri : sort_tri_raster) {
-            // Rasterize triangle, Now the olc console engine has the function call fillTriangle
-            FillTriangle(tri.pts[0].x, tri.pts[0].y,
-                tri.pts[1].x, tri.pts[1].y,
-                tri.pts[2].x, tri.pts[2].y,
-                tri.sym, tri.col);
+
+            // Clipping triangles on the edge, we might possibly has some triangles to be clipped
+            Triangle clipped[2];
+            std::list<Triangle> triangle_list;
+            triangle_list.push_back(tri);
+            int new_tri = triangle_list.size();
+
+            for (int i = 0; i < 4; ++i) {
+                int tri_to_add = 0;
+                while (new_tri > 0) {
+                    Triangle test = triangle_list.front();
+                    triangle_list.pop_front();
+                    new_tri--;
+
+                    // Clip against each plane, we only need to check subsequent plane
+                    switch (i) {
+                        case 0:
+                            tri_to_add = ClipAgainstPlane({ 0.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, test, clipped[0], clipped[1]);
+                            break;
+                        case 1:
+                            tri_to_add = ClipAgainstPlane({ 0.0f, (float)ScreenHeight() - 1, 0.0f }, { 0.0f, -1.0f, 0.0f }, test, clipped[0], clipped[1]);
+                            break;
+                        case 2:
+                            tri_to_add = ClipAgainstPlane({ 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1]);
+                            break;
+                        case 3:
+                            tri_to_add = ClipAgainstPlane({ (float)ScreenWidth() - 1, 0.0f, 0.0f }, { -1.0f, 0.0f, 0.0f }, test, clipped[0], clipped[1]);
+                            break;
+                        default:
+                            break;
+                    }
+
+                    // we might have new triangles for subsequent planes, and clipping may yield variable number of triangles
+                    for (int k = 0; k < tri_to_add; ++k) {
+                        triangle_list.push_back(clipped[k]);
+                    }
+                }
+
+                // Update new tri size
+                new_tri = triangle_list.size();
+            }
+
+            for (auto& t : triangle_list) {
+                // Rasterize triangle, Now the olc console engine has the function call fillTriangle
+                FillTriangle(t.pts[0].x, t.pts[0].y, t.pts[1].x, t.pts[1].y, t.pts[2].x, t.pts[2].y, t.sym, t.col);
+            }
         }
 
         // Return true to indicate it works without error.
@@ -263,6 +318,102 @@ private:
         c.Attributes = bg_col | fg_col;
         c.Char.UnicodeChar = sym;
         return c;
+    }
+
+    /**
+     * @brief This performs clipping triangles, checking whether the triangle should be renderred or not, or render parts of them
+     * @param plane_p The frustum boarder plane point
+     * @param normal The normal of the plane
+     * @param in_tri The input triangle
+     * @param out_tri_1 The placeholder for output
+     * @param out_tri_2 The other placeholder 
+     * @return Integer representing how many triangles are output
+     */
+    int ClipAgainstPlane(Vector3d plane_p, Vector3d normal, Triangle& in_tri, Triangle& out_tri_1, Triangle& out_tri_2) {
+        // Normal should be normalized
+        Normalize(normal);
+
+        // Return signed shortest distance from point to plane, plane normal must be normalized
+        auto dist = [&](Vector3d& p) {
+            return (normal.x * p.x + normal.y * p.y + normal.z * p.z - DotProduct(normal, plane_p));
+        };
+
+        // Create two temporary storage arrays to classify points either side of plane
+        // If distance sign is positive, point lies on "inside" of plane
+        Vector3d* inside_pts[3]{};
+        Vector3d* outside_pts[3]{};
+
+        int cnt_inside = 0, cnt_outside = 0;
+
+        // Get signed distance of each point in triangle to plane
+        float d0 = dist(in_tri.pts[0]);
+        float d1 = dist(in_tri.pts[1]);
+        float d2 = dist(in_tri.pts[2]);
+
+        if (d0 >= 0) {
+            inside_pts[cnt_inside++] = &in_tri.pts[0];
+        }
+        else {
+            outside_pts[cnt_outside++] = &in_tri.pts[0];
+        }
+
+        if (d1 >= 0) {
+            inside_pts[cnt_inside++] = &in_tri.pts[1];
+        }
+        else {
+            outside_pts[cnt_outside++] = &in_tri.pts[1];
+        }
+
+        if (d2 >= 0) {
+            inside_pts[cnt_inside++] = &in_tri.pts[2];
+        }
+        else {
+            outside_pts[cnt_outside++] = &in_tri.pts[2];
+        }
+
+        // 4 possible case
+        if (cnt_inside == 0) {
+            // The triangle is outside of the frustum
+            return 0;
+        }
+
+        if (cnt_inside == 3) {
+            // All points line inside of the frustum
+            out_tri_1 = in_tri;
+
+            return 1;
+        }
+
+        if (cnt_inside == 1 && cnt_outside == 2) {
+            
+            // Triangle should be clipped. As two points lie outside
+            // the plane, the triangle simply becomes a smaller triangle
+
+            out_tri_1.col = in_tri.col;
+            out_tri_1.sym = in_tri.sym;
+
+            out_tri_1.pts[0] = *inside_pts[0];
+            out_tri_1.pts[1] = IntersectPlane(plane_p, normal, *inside_pts[0], *outside_pts[0]);
+            out_tri_1.pts[2] = IntersectPlane(plane_p, normal, *inside_pts[0], *outside_pts[1]);
+            return 1;
+        }
+
+        if (cnt_inside == 2 && cnt_outside == 1) {
+            // Make quad to be two triangles
+            out_tri_1.col = in_tri.col;
+            out_tri_1.sym = in_tri.sym;
+            out_tri_2.col = in_tri.col;
+            out_tri_2.sym = in_tri.sym;
+
+            out_tri_1.pts[0] = *inside_pts[0];
+            out_tri_1.pts[1] = *inside_pts[1];
+            out_tri_1.pts[2] = IntersectPlane(plane_p, normal, *inside_pts[0], *outside_pts[0]);
+
+            out_tri_2.pts[0] = *inside_pts[1];
+            out_tri_2.pts[1] = out_tri_1.pts[2];
+            out_tri_2.pts[2] = IntersectPlane(plane_p, normal, *inside_pts[1], *outside_pts[0]);
+            return 2;
+        }
     }
 };
 
